@@ -2,6 +2,6 @@
 
 int main()
 {
-	Allocator<int, 100> a;
+	Allocator<int, 1000> a;
 	a.allocate(30);
 }

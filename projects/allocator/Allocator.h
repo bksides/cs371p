@@ -77,6 +77,24 @@ class Allocator {
             // <your code>
             return true;}
 
+        void write_data_to_arr(char* dest, T const * src)
+        {
+            char const * by_byte = (char const *)src;
+            for(int i = 0; i < sizeof(T); i++)
+            {
+                dest[i] = by_byte[i];
+            }
+        }
+
+        void write_sentinel_to_arr(char* dest, int const * src)
+        {
+            char const * by_byte = (char const *)src;
+            for(int i = 0; i < sizeof(int); i++)
+            {
+                dest[i] = by_byte[i];
+            }
+        }
+
         /**
          * O(1) in space
          * O(1) in time
@@ -103,15 +121,14 @@ class Allocator {
                 throw std::bad_alloc();
             }
 
-            uint32_t avail = N-2*sizeof(int);
-            std::memcpy(&a, &avail, sizeof(avail));
-            std::memcpy(&a[N-sizeof(int)], &avail, sizeof(avail));
+            int avail = N-2*sizeof(int);
+            write_sentinel_to_arr(a, &avail);
+            write_sentinel_to_arr(&a[N-sizeof(int)], &avail);
 
-            for(int j = 0; j < N; j++)
+            for(char* j = a; j < a+N; j++)
             {
-                std::cout << std::setw(4) << (int)a[j] << " ";
+                std::cout << std::setw(4) << (int)*(unsigned char*)j << " ";
             }
-
             std::cout << "\n\n";
 
             assert(valid());}
@@ -155,7 +172,7 @@ class Allocator {
                     
                     for(char* j = a; j < a+N; j++)
                     {
-                        std::cout << std::setw(4) << (int)*j << " ";
+                        std::cout << std::setw(4) << (int)*(unsigned char*)j << " ";
                     }
                     std::cout << "\n\n";
 
