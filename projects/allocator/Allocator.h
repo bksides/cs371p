@@ -15,6 +15,10 @@
 #include <cstddef>   // ptrdiff_t, size_t
 #include <new>       // bad_alloc, new
 #include <stdexcept> // invalid_argument
+#include <iostream>  // cout
+#include <iomanip>   // iomanip
+#include <cstring>   // memcpy
+#include <stdint.h>    // uint32_t
 
 // ---------
 // Allocator
@@ -77,10 +81,11 @@ class Allocator {
          * O(1) in space
          * O(1) in time
          * https://code.google.com/p/googletest/wiki/AdvancedGuide#Private_Class_Members
-         */
+         
         FRIEND_TEST(TestAllocator2, index);
         int& operator [] (int i) {
             return *reinterpret_cast<int*>(&a[i]);}
+         */
 
     public:
         // ------------
@@ -93,8 +98,22 @@ class Allocator {
          * throw a bad_alloc exception, if N is less than sizeof(T) + (2 * sizeof(int))
          */
         Allocator () {
-            (*this)[0] = 0; // replace!
-            // <your code>
+            if(N < sizeof(T) + (2 * sizeof(int)))
+            {
+                throw std::bad_alloc();
+            }
+
+            uint32_t avail = N-2*sizeof(int);
+            std::memcpy(&a, &avail, sizeof(avail));
+            std::memcpy(&a[N-sizeof(int)], &avail, sizeof(avail));
+
+            for(int j = 0; j < N; j++)
+            {
+                std::cout << std::setw(4) << (int)a[j] << " ";
+            }
+
+            std::cout << "\n\n";
+
             assert(valid());}
 
         // Default copy, destructor, and copy assignment
@@ -115,9 +134,36 @@ class Allocator {
          * throw a bad_alloc exception, if n is invalid
          */
         pointer allocate (size_type n) {
-            // <your code>
-            assert(valid());
-            return nullptr;}             // replace!
+            for(char* i = a; i < a+N;)
+            {
+                if((*((int*)i) >= n))
+                {
+                    if(*((int*)i)-(n+2*sizeof(int)) >= sizeof(T) + 2*sizeof(int))
+                    {
+                        int old = *(int*)i;
+                        *(int*)i = -1*n;
+                        *(int*)(i+sizeof(int)+n) = -1*n;
+                        *(int*)(i+2*sizeof(int)+n) = old-n-2*sizeof(int);
+                        *(int*)(i+old+sizeof(int)) = old-n-2*sizeof(int);
+                    }
+                    else
+                    {
+                        *(int*)i = -1*(*((int*)i));
+                        *(int*)(i+sizeof(int)+(*((int*)i))) = -1*(*(int*)i);
+                    }
+                    assert(valid());
+                    
+                    for(char* j = a; j < a+N; j++)
+                    {
+                        std::cout << std::setw(4) << (int)*j << " ";
+                    }
+                    std::cout << "\n\n";
+
+                    return (pointer)i;
+                }
+                i += 2*sizeof(int) + *((int*)i);
+            }
+        }
 
         // ---------
         // construct
