@@ -99,11 +99,11 @@ class Allocator {
          * O(1) in space
          * O(1) in time
          * https://code.google.com/p/googletest/wiki/AdvancedGuide#Private_Class_Members
+         */
          
         FRIEND_TEST(TestAllocator2, index);
         int& operator [] (int i) {
             return *reinterpret_cast<int*>(&a[i]);}
-         */
 
     public:
         // ------------
@@ -151,6 +151,7 @@ class Allocator {
          * throw a bad_alloc exception, if n is invalid
          */
         pointer allocate (size_type n) {
+            n *= sizeof(T);
             for(char* i = a; i < a+N;)
             {
                 if((*((int*)i) >= n))
