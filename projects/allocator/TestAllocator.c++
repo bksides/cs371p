@@ -8,12 +8,15 @@
 // includes
 // --------
 
+#define ISTEST 1
+
 #include <algorithm> // count
 #include <memory>    // allocator
 
 #include "gtest/gtest.h"
 
 #include "Allocator.h"
+
 
 // --------------
 // TestAllocator1
