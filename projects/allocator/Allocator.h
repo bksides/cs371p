@@ -24,7 +24,9 @@
 // Allocator
 // ---------
 
-template <typename T, std::size_t N>
+using namespace std;
+
+template <typename T, size_t N>
 class Allocator {
     public:
         // --------
@@ -33,8 +35,8 @@ class Allocator {
 
         typedef T                 value_type;
 
-        typedef std::size_t       size_type;
-        typedef std::ptrdiff_t    difference_type;
+        typedef size_t       size_type;
+        typedef ptrdiff_t    difference_type;
 
         typedef       value_type*       pointer;
         typedef const value_type* const_pointer;
@@ -101,7 +103,9 @@ class Allocator {
          * https://code.google.com/p/googletest/wiki/AdvancedGuide#Private_Class_Members
          */
          
+        #ifdef ISTEST
         FRIEND_TEST(TestAllocator2, index);
+        #endif
         int& operator [] (int i) {
             return *reinterpret_cast<int*>(&a[i]);}
 
@@ -118,7 +122,7 @@ class Allocator {
         Allocator () {
             if(N < sizeof(T) + (2 * sizeof(int)))
             {
-                throw std::bad_alloc();
+                throw bad_alloc();
             }
 
             int avail = N-2*sizeof(int);
@@ -127,9 +131,9 @@ class Allocator {
 
             for(char* j = a; j < a+N; j++)
             {
-                std::cout << std::setw(4) << (int)*(unsigned char*)j << " ";
+                cout << setw(4) << (int)*(unsigned char*)j << " ";
             }
-            std::cout << "\n\n";
+            cout << "\n\n";
 
             assert(valid());}
 
@@ -152,6 +156,10 @@ class Allocator {
          */
         pointer allocate (size_type n) {
             n *= sizeof(T);
+            if(n <= 0)
+            {
+                throw bad_alloc();
+            }
             for(char* i = a; i < a+N;)
             {
                 if((*((int*)i) >= n))
@@ -173,14 +181,15 @@ class Allocator {
                     
                     for(char* j = a; j < a+N; j++)
                     {
-                        std::cout << std::setw(4) << (int)*(unsigned char*)j << " ";
+                        cout << setw(4) << (int)*(unsigned char*)j << " ";
                     }
-                    std::cout << "\n\n";
+                    cout << "\n\n" << (long)(i+sizeof(int)) << ": " << (int)*(i+sizeof(int)) << "\n\n";
 
-                    return (pointer)i;
+                    return (pointer)(i+sizeof(int));
                 }
                 i += 2*sizeof(int) + *((int*)i);
             }
+            throw bad_alloc();
         }
 
         // ---------
