@@ -9,12 +9,11 @@ FILES :=                                  \
     html                                  \
     makefile                              \
     TestAllocator.c++                     \
-    TestAllocator.out
+    TestAllocator.out					  \
+    .travis.yml                           \
+    allocator-tests/EID-TestAllocator.c++ \
+    allocator-tests/EID-TestAllocator.out
 
-# uncomment these:
-#    .travis.yml                           \
-#    allocator-tests/EID-TestAllocator.c++ \
-#    allocator-tests/EID-TestAllocator.out \
 ifeq ($(shell uname), Darwin)                                           # Apple
     CXX          := g++
     INCLUDE      := /usr/local/include
