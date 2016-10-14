@@ -210,7 +210,6 @@ class Allocator {
                         int old = *(int*)i;
                         *(int*)i = -1*old;
                         *(int*)(i+sizeof(int)+old) = -1*old;
-                        cout << "SUSPECTED ERROR: " << sizeof(int)+(*(int*)i) << "\n";
                     }
 
                     for(char* j = a; j < a+N; j++)
