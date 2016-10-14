@@ -1,5 +1,20 @@
+.PHONY: Allocator.log
+
 .DEFAULT_GOAL := test
 
+FILES :=                                  \
+    .gitignore                            \
+    Allocator.h                           \
+    Allocator.log                         \
+    html                                  \
+    makefile                              \
+    TestAllocator.c++                     \
+    TestAllocator.out
+
+# uncomment these:
+#    .travis.yml                           \
+#    allocator-tests/EID-TestAllocator.c++ \
+#    allocator-tests/EID-TestAllocator.out \
 ifeq ($(shell uname), Darwin)                                           # Apple
     CXX          := g++
     INCLUDE      := /usr/local/include
@@ -50,58 +65,73 @@ else                                                                    # UTCS
     CLANG-FORMAT := clang-format-3.8
 endif
 
+allocator-tests:
+	git clone https://github.com/cs371p-fall-2016/allocator-tests.git
+
+html: Doxyfile Allocator.h TestAllocator.c++
+	doxygen Doxyfile
+
+Allocator.log:
+	git log > Allocator.log
+
+Doxyfile:
+	doxygen -g
+
+# Make the following edits to Doxyfile.
+# EXTRACT_ALL            = YES
+# EXTRACT_PRIVATE        = YES
+# EXTRACT_STATIC         = YES
+
+TestAllocator: Allocator.h TestAllocator.c++
+	$(CXX) $(CXXFLAGS) $(GCOVFLAGS) TestAllocator.c++ -o TestAllocator $(LDFLAGS)
+	-$(CLANG-CHECK) -extra-arg=-std=c++11          TestAllocator.c++ --
+	-$(CLANG-CHECK) -extra-arg=-std=c++11 -analyze TestAllocator.c++ --
+
+TestAllocator.tmp: TestAllocator
+	$(VALGRIND) ./TestAllocator                                         >  TestAllocator.tmp 2>&1
+	$(GCOV) -b TestAllocator.c++ | grep -A 5 "File 'TestAllocator.c++'" >> TestAllocator.tmp
+	cat TestAllocator.tmp
+
+check:
+	@not_found=0;                                 \
+    for i in $(FILES);                            \
+    do                                            \
+        if [ -e $$i ];                            \
+        then                                      \
+            echo "$$i found";                     \
+        else                                      \
+            echo "$$i NOT FOUND";                 \
+            not_found=`expr "$$not_found" + "1"`; \
+        fi                                        \
+    done;                                         \
+    if [ $$not_found -ne 0 ];                     \
+    then                                          \
+        echo "$$not_found failures";              \
+        exit 1;                                   \
+    fi;                                           \
+    echo "success";
+
 clean:
-	cd examples; make clean
-	@echo
-	cd exercises; make clean
-	@echo
-	cd projects/collatz; make clean
-	@echo
-	cd projects/allocator; make clean
+	rm -f  *.bin
+	rm -f  *.db
+	rm -f  *.gcda
+	rm -f  *.gcno
+	rm -f  *.gcov
+	rm -f  *.plist
+	rm -f  Allocator.log
+	rm -f  Doxyfile
+	rm -f  TestAllocator
+	rm -f  TestAllocator.tmp
+	rm -rf *.dSYM
+	rm -rf html
+	rm -rf latex
 
 config:
 	git config -l
 
-docker-build:
-	docker build -t gpdowning/gcc .
-
-docker-pull:
-	docker pull gpdowning/gcc
-
-docker-push:
-	docker push gpdowning/gcc
-
-docker-run:
-	docker run -it -v $(PWD):/usr/cs371p -w /usr/cs371p gpdowning/gcc
-
-init:
-	touch README
-	git init
-	git add README
-	git commit -m 'first commit'
-	git remote add origin git@github.com:gpdowning/cs371p.git
-	git push -u origin master
-
-pull:
-	make clean
-	@echo
-	git pull
-	git status
-
-push:
-	make clean
-	@echo
-	git add .gitignore
-	git add .travis.yml
-	git add Dockerfile
-	git add examples
-	git add exercises
-	git add makefile
-	git add projects/collatz
-	git add projects/allocator
-	git commit -m "another commit"
-	git push
-	git status
+format:
+	$(CLANG-FORMAT) -i Allocator.h
+	$(CLANG-FORMAT) -i TestAllocator.c++
 
 status:
 	make clean
@@ -110,80 +140,7 @@ status:
 	git remote -v
 	git status
 
-sync:
-	@rsync -r -t -u -v --delete              \
-    --include "Hello.c++"                    \
-    --include "Docker.sh"                    \
-    --include "Assertions.c++"               \
-    --include "UnitTests1.c++"               \
-    --include "UnitTests2.c++"               \
-    --include "UnitTests3.c++"               \
-    --include "Coverage1.c++"                \
-    --include "Coverage2.c++"                \
-    --include "Coverage3.c++"                \
-    --include "Exceptions.c++"               \
-    --include "Variables.c++"                \
-    --include "Types.c++"                    \
-    --include "Operators.c++"                \
-    --include "Arguments.c++"                \
-    --include "BoostSerialization.c++"       \
-    --include "Iterators.c++"                \
-    --include "Cache.c++"                    \
-    --include "Returns.c++"                  \
-    --include "Consts.c++"                   \
-    --include "Arrays.c++"                   \
-    --exclude "*"                            \
-    ../../examples/c++/ examples
-	@rsync -r -t -u -v --delete              \
-    --include "IsPrime1.c++"                 \
-    --include "IsPrime1.h"                   \
-    --include "IsPrime2.c++"                 \
-    --include "IsPrime2.h"                   \
-    --include "Incr.c++"                     \
-    --include "Incr.h"                       \
-    --include "Equal.c++"                    \
-    --include "Equal.h"                      \
-    --include "Copy.c++"                     \
-    --include "Copy.h"                       \
-    --include "Fill.c++"                     \
-    --include "Fill.h"                       \
-    --include "RMSE.c++"                     \
-    --include "RMSE.h"                       \
-    --include "AllOf.c++"                    \
-    --include "AllOf.h"                      \
-    --include "RangeIterator.c++"            \
-    --include "RangeIterator.h"              \
-    --include "Range.c++"                    \
-    --include "Range.h"                      \
-    --exclude "*"                            \
-    ../../exercises/c++/ exercises
-	@rsync -r -t -u -v --delete              \
-    --include "Collatz.c++"                  \
-    --include "Collatz.h"                    \
-    --include "RunCollatz.c++"               \
-    --include "RunCollatz.in"                \
-    --include "RunCollatz.out"               \
-    --include "TestCollatz.c++"              \
-    --include "TestCollatz.out"              \
-    --exclude "*"                            \
-    ../../projects/c++/collatz/ projects/collatz
-	@rsync -r -t -u -v --delete              \
-    --include "Allocator.h"                  \
-    --include "TestAllocator.c++"            \
-    --include "TestAllocator.out"            \
-    --exclude "*"                            \
-    ../../projects/c++/allocator/ projects/allocator
-
-test:
-	make clean
-	@echo
-	cd examples; make test
-	@echo
-	cd exercises; make test
-	@echo
-	cd projects/collatz; make test
-	@echo
-	cd projects/allocator; make test
+test: html Allocator.log TestAllocator.tmp allocator-tests check
 
 versions:
 	which make
