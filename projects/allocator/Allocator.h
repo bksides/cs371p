@@ -18,7 +18,8 @@
 #include <iostream>  // cout
 #include <iomanip>   // iomanip
 #include <cstring>   // memcpy
-#include <stdint.h>    // uint32_t
+#include <stdint.h>  // uint32_t
+#include <cstdlib>   // abs
 
 // ---------
 // Allocator
@@ -76,7 +77,39 @@ class Allocator {
          * <your documentation>
          */
         bool valid () const {
-            // <your code>
+            bool can_be_free = true;
+            for(const char* i = a; i < &a[N-sizeof(int)];)
+            {
+                int diff = abs(*(int*)i) + sizeof(int);
+                cout << (long)i << "\n";
+                cout << diff << "\n";
+                cout << *(int*)i << "\n";
+                cout << *(int*)(i+diff) << "\n";
+
+                if (*(int*)i != *(int*)(i+diff))    //Does the sentinel have a matching
+                                                    //sentinel at the appropriate address?
+                    return false;
+
+                diff += sizeof(int);
+                cout << diff << "\n";
+                if(*(int*)i > 0)                    //If the block is free:
+                {
+                    if(!can_be_free)                    //Is it ok for the block to be free?
+                    {                                   //i.e. was the last block occupied?
+                        return false;                   //Otherwise we have two consecutive free blocks
+                    }
+                    if(*(int*)i < sizeof(T))            //Is the block big enough to fit a T?
+                    {                                   //If not we are wasting space
+                        return false;
+                    }
+                    can_be_free = false;                //Tell the next block it is not allowed to be free
+                }
+                else                                //Otherwise:
+                {                       
+                    can_be_free = true;                 //Tell the next block it is allowed to be free.
+                }
+                i += diff;                          //Move on to the next block.
+            }
             return true;}
 
         void write_data_to_arr(char* dest, T const * src)
@@ -156,13 +189,13 @@ class Allocator {
          */
         pointer allocate (size_type n) {
             n *= sizeof(T);
-            if(n <= 0)
+            if(n <= 0)      //if n was negative, throw a bad_alloc
             {
                 throw bad_alloc();
             }
-            for(char* i = a; i < a+N;)
+            for(char* i = a; i < a+N;)  //iterate over blocks
             {
-                if((*((int*)i) >= n))
+                if((*((int*)i) >= n))   //If we have a free block with enough space
                 {
                     if(*((int*)i)-(n+2*sizeof(int)) >= sizeof(T) + 2*sizeof(int))
                     {
@@ -174,16 +207,19 @@ class Allocator {
                     }
                     else
                     {
-                        *(int*)i = -1*(*((int*)i));
-                        *(int*)(i+sizeof(int)+(*((int*)i))) = -1*(*(int*)i);
+                        int old = *(int*)i;
+                        *(int*)i = -1*old;
+                        *(int*)(i+sizeof(int)+old) = -1*old;
+                        cout << "SUSPECTED ERROR: " << sizeof(int)+(*(int*)i) << "\n";
                     }
-                    assert(valid());
-                    
+
                     for(char* j = a; j < a+N; j++)
                     {
                         cout << setw(4) << (int)*(unsigned char*)j << " ";
                     }
                     cout << "\n\n" << (long)(i+sizeof(int)) << ": " << (int)*(i+sizeof(int)) << "\n\n";
+
+                    assert(valid());
 
                     return (pointer)(i+sizeof(int));
                 }
