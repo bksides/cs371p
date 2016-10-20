@@ -250,7 +250,8 @@ class Allocator {
          * throw an invalid_argument exception, if p is invalid
          * <your documentation>
          */
-        void deallocate (pointer pc, size_type) {
+        void deallocate (pointer p, size_type) {
+            char* pc = (char*) p;
             if(!pointer_valid(p))
             {
                 throw invalid_argument("pc");
