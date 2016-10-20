@@ -36,5 +36,6 @@ before_script:
 
 script:
     - date
+    - cd projects/allocator
     - ls -al
     - make test
