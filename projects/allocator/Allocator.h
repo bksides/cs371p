@@ -81,17 +81,12 @@ class Allocator {
             for(const char* i = a; i < &a[N-sizeof(int)];)
             {
                 int diff = abs(*(int*)i) + sizeof(int);
-                cout << (long)i << "\n";
-                cout << diff << "\n";
-                cout << *(int*)i << "\n";
-                cout << *(int*)(i+diff) << "\n";
 
                 if (*(int*)i != *(int*)(i+diff))    //Does the sentinel have a matching
                                                     //sentinel at the appropriate address?
                     return false;
 
                 diff += sizeof(int);
-                cout << diff << "\n";
                 if(*(int*)i > 0)                    //If the block is free:
                 {
                     if(!can_be_free)                    //Is it ok for the block to be free?
@@ -162,12 +157,6 @@ class Allocator {
             write_sentinel_to_arr(a, &avail);
             write_sentinel_to_arr(&a[N-sizeof(int)], &avail);
 
-            for(char* j = a; j < a+N; j++)
-            {
-                cout << setw(4) << (int)*(unsigned char*)j << " ";
-            }
-            cout << "\n\n";
-
             assert(valid());}
 
         // Default copy, destructor, and copy assignment
@@ -211,12 +200,6 @@ class Allocator {
                         *(int*)i = -1*old;
                         *(int*)(i+sizeof(int)+old) = -1*old;
                     }
-
-                    for(char* j = a; j < a+N; j++)
-                    {
-                        cout << setw(4) << (int)*(unsigned char*)j << " ";
-                    }
-                    cout << "\n\n" << (long)(i+sizeof(int)) << ": " << (int)*(i+sizeof(int)) << "\n\n";
 
                     assert(valid());
 
