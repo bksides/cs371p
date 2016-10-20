@@ -250,9 +250,56 @@ class Allocator {
          * throw an invalid_argument exception, if p is invalid
          * <your documentation>
          */
-        void deallocate (pointer p, size_type) {
-            // <your code>
+        void deallocate (pointer pc, size_type) {
+            if(!pointer_valid(p))
+            {
+                throw invalid_argument("pc");
+            }
+            int size = -1*(*(int*)(pc-sizeof(int)));
+            *(int*)(pc-sizeof(int)) = size;
+            pc += size;
+            *(int*)pc = size;
+            pc -= size + 2*sizeof(int);
+            if(*(int*)pc > 0)
+            {
+                int sum = *(int*)pc + size + 2*sizeof(int);
+                pc -= sum-size-sizeof(int);
+                *(int*)pc = sum;
+                pc += sum+sizeof(int);
+                *(int*)pc = sum;
+                pc -= size + 2*sizeof(int);
+                size = sum;
+            }
+
+            pc += size + 3*sizeof(int);
+            if(*(int*)pc > 0)
+            {
+                int sum = *(int*)pc + size + 2*sizeof(int);
+                pc += sum-size-sizeof(int);
+                *(int*)pc = sum;
+                pc -= sum+sizeof(int);
+                *(int*)pc = sum;
+                pc -= size + 2*sizeof(int);
+            }            
+
             assert(valid());}
+
+        bool pointer_valid(pointer p)
+        {
+            for(char* i = a; i < a+N;)
+            {
+                int size = *(int*)i;
+                i += sizeof(int);
+                if(i == (char*)p)
+                    return true;
+                else if(i > (char*)p)
+                {
+                    return false;
+                }
+                i += size + sizeof(int);
+            }
+            return false;
+        }
 
         // -------
         // destroy
