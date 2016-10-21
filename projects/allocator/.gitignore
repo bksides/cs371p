@@ -4,7 +4,6 @@
 *.gcno
 *.gcov
 *.plist
-allocator-tests
 Doxyfile
 Icon?
 TestAllocator
