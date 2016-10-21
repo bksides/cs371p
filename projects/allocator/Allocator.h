@@ -4,6 +4,11 @@
 // Glenn P. Downing
 // ------------------------------
 
+/**
+* @file Allocator.h
+* This file contains the Allocator class
+*/
+
 #ifndef Allocator_h
 #define Allocator_h
 
@@ -27,6 +32,17 @@
 
 using namespace std;
 
+/**
+ * An allocator class capable of allocating memory
+ * directly on the stack.
+ * 
+ * @tparam T The type of object for which this allocator
+ * will allocate space.
+ * 
+ * @tparam N The size, in bytes, of the memory region
+ * this allocator will manage.  This memory is allocated
+ * on the stack when the Allocator is constructed.
+ */
 template <typename T, size_t N>
 class Allocator {
     public:
@@ -50,12 +66,23 @@ class Allocator {
         // operator ==
         // -----------
 
+        /**
+         * An equality comparator operator.
+         *
+         * @return true; all allocators are equal to one another by this operator.
+         */
         friend bool operator == (const Allocator&, const Allocator&) {
             return true;}                                              // this is correct
 
         // -----------
         // operator !=
         // -----------
+
+        /**
+         * An inequality comparator operator.
+         *
+         * @return false; all allocators are equal to one another by this operator.
+         */
 
         friend bool operator != (const Allocator& lhs, const Allocator& rhs) {
             return !(lhs == rhs);}
@@ -72,9 +99,13 @@ class Allocator {
         // -----
 
         /**
-         * O(1) in space
-         * O(n) in time
-         * <your documentation>
+         * This function ensures that the memory region
+         * managed by this allocator is well-formed.
+         * That is, each block is of the length denoted
+         * by its sentinels, and no consecutive free
+         * blocks exist.
+         *
+         * @return true if the region is well-formed.
          */
         bool valid () const {
             bool can_be_free = true;
@@ -107,6 +138,16 @@ class Allocator {
             }
             return true;}
 
+        /**
+         * This function writes a sentinel into the memory region
+         * managed by this allocator.
+         *
+         * @param dest The location in the memory region to which
+         * the sentinel shall be written
+         *
+         * @param src The location of the integer which will be
+         * written as a sentinel
+         */
         void write_sentinel_to_arr(char* dest, int const * src)
         {
             char const * by_byte = (char const *)src;
@@ -115,12 +156,6 @@ class Allocator {
                 dest[i] = by_byte[i];
             }
         }
-
-        /**
-         * O(1) in space
-         * O(1) in time
-         * https://code.google.com/p/googletest/wiki/AdvancedGuide#Private_Class_Members
-         */
          
         #ifdef ISTEST
         FRIEND_TEST(TestAllocator2, index);
@@ -138,6 +173,15 @@ class Allocator {
         FRIEND_TEST(TestAllocator2, deallocate_1);
         FRIEND_TEST(TestAllocator2, deallocate_2);
         #endif
+        /**
+         * Allows random access to the memory region managed by this allocator.
+         *
+         * @param i The offset of the location
+         * to be accessed from the beginning of the region
+         *
+         * @returns an integer representation of the contents of the requested
+         * location
+         */
         int& operator [] (int i) {
             return *reinterpret_cast<int*>(&a[i]);}
 
@@ -147,9 +191,12 @@ class Allocator {
         // ------------
 
         /**
-         * O(1) in space
-         * O(1) in time
-         * throw a bad_alloc exception, if N is less than sizeof(T) + (2 * sizeof(int))
+         * Constructs a new allocator
+         *
+         * @throw bad_alloc Thrown if the memory region
+         * cannot fit, at minimum, one object of size T
+         * and two sentinels.  That is, N must be at
+         * least sizeof(T)+2*sizeof(int).
          */
         Allocator () {
             if(N < sizeof(T) + (2 * sizeof(int)))
@@ -173,12 +220,18 @@ class Allocator {
         // --------
 
         /**
-         * O(1) in space
-         * O(n) in time
-         * after allocation there must be enough space left for a valid block
-         * the smallest allowable block is sizeof(T) + (2 * sizeof(int))
-         * choose the first block that fits
-         * throw a bad_alloc exception, if n is invalid
+         * Allocates space for n objects of type T.
+         * 
+         * @param n The number of objects of type T
+         * which shall fit in the space allocated by
+         * this call to allocate.
+         *
+         * @return a pointer to the beginning of the
+         * region allocated by this call to allocate.
+         *
+         * @throw bad_alloc Thrown if n is less than 0
+         * or if there is not enough room for the requested
+         * allocation.
          */
         pointer allocate (size_type n) {
             n *= sizeof(T);
@@ -231,17 +284,23 @@ class Allocator {
         // ----------
 
         /**
-         * O(1) in space
-         * O(1) in time
-         * after deallocation adjacent free blocks must be coalesced
-         * throw an invalid_argument exception, if p is invalid
-         * <your documentation>
+         * This function deallocates a region
+         * indicated by p
+         * 
+         * @param p The beginning of the region
+         * to be deallocated
+         *
+         * @param n the size, in units of the size
+         * of T, of the region to be deallocated.
+         * n should be equal to the value
+         * passed to the allocate() call which
+         * originally returned p.
          */
-        void deallocate (pointer p, size_type) {
+        void deallocate (pointer p, size_type n) {
             char* pc = (char*) p;
-            if(!pointer_valid(p))
+            if(!pointer_valid(p) || *(int*)(pc-sizeof(int)) > 0)
             {
-                throw invalid_argument("pc");
+                throw invalid_argument("p");
             }
             int size = -1*(*(int*)(pc-sizeof(int)));
             *(int*)(pc-sizeof(int)) = size;
@@ -272,6 +331,18 @@ class Allocator {
 
             assert(valid());}
 
+        /**
+         * This function determines whether a pointer
+         * points to the beginning of a block in the region
+         * managed by this allocator.
+         *
+         * @param p The pointer whose validity shall be
+         * determined.
+         *
+         * @return true if this pointer is valid; that is,
+         * if it points to the beginning of a block in the
+         * region of memory managed by this allocator.
+         */ 
         bool pointer_valid(pointer p)
         {
             for(char* i = a; i < a+N;)
