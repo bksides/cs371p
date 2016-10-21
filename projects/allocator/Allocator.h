@@ -107,15 +107,6 @@ class Allocator {
             }
             return true;}
 
-        void write_data_to_arr(char* dest, T const * src)
-        {
-            char const * by_byte = (char const *)src;
-            for(int i = 0; i < sizeof(T); i++)
-            {
-                dest[i] = by_byte[i];
-            }
-        }
-
         void write_sentinel_to_arr(char* dest, int const * src)
         {
             char const * by_byte = (char const *)src;
@@ -133,6 +124,19 @@ class Allocator {
          
         #ifdef ISTEST
         FRIEND_TEST(TestAllocator2, index);
+        FRIEND_TEST(TestAllocator2, valid_1);
+        FRIEND_TEST(TestAllocator2, valid_2);
+        FRIEND_TEST(TestAllocator2, valid_3);
+        FRIEND_TEST(TestAllocator2, valid_4);
+        FRIEND_TEST(TestAllocator2, write_sentinel_to_arr_1);
+        FRIEND_TEST(TestAllocator2, write_sentinel_to_arr_2);
+        FRIEND_TEST(TestAllocator2, write_sentinel_to_arr_3);
+        FRIEND_TEST(TestAllocator2, constructor_1);
+        FRIEND_TEST(TestAllocator2, constructor_3);
+        FRIEND_TEST(TestAllocator2, allocate_2);
+        FRIEND_TEST(TestAllocator2, allocate_3);
+        FRIEND_TEST(TestAllocator2, deallocate_1);
+        FRIEND_TEST(TestAllocator2, deallocate_2);
         #endif
         int& operator [] (int i) {
             return *reinterpret_cast<int*>(&a[i]);}
@@ -184,7 +188,7 @@ class Allocator {
             }
             for(char* i = a; i < a+N;)  //iterate over blocks
             {
-                if((*((int*)i) >= n))   //If we have a free block with enough space
+                if(*(int*)i >= n && *(int*)i > 0)   //If we have a free block with enough space
                 {
                     if(*((int*)i)-(n+2*sizeof(int)) >= sizeof(T) + 2*sizeof(int))
                     {
@@ -205,7 +209,7 @@ class Allocator {
 
                     return (pointer)(i+sizeof(int));
                 }
-                i += 2*sizeof(int) + *((int*)i);
+                i += 2*sizeof(int) + abs(*((int*)i));
             }
             throw bad_alloc();
         }
@@ -244,19 +248,19 @@ class Allocator {
             pc += size;
             *(int*)pc = size;
             pc -= size + 2*sizeof(int);
-            if(*(int*)pc > 0)
+            if(*(int*)pc > 0 && pc >= a)
             {
                 int sum = *(int*)pc + size + 2*sizeof(int);
                 pc -= sum-size-sizeof(int);
                 *(int*)pc = sum;
                 pc += sum+sizeof(int);
                 *(int*)pc = sum;
-                pc -= size + 2*sizeof(int);
                 size = sum;
+                pc -= size + 2*sizeof(int);
             }
 
             pc += size + 3*sizeof(int);
-            if(*(int*)pc > 0)
+            if(*(int*)pc > 0 && pc < a+N)
             {
                 int sum = *(int*)pc + size + 2*sizeof(int);
                 pc += sum-size-sizeof(int);
@@ -272,7 +276,7 @@ class Allocator {
         {
             for(char* i = a; i < a+N;)
             {
-                int size = *(int*)i;
+                int size = abs(*(int*)i);
                 i += sizeof(int);
                 if(i == (char*)p)
                     return true;
