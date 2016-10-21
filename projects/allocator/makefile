@@ -11,8 +11,6 @@ FILES :=                                  \
     TestAllocator.c++                     \
     TestAllocator.out					  \
     .travis.yml                           \
-    allocator-tests/bks874-TestAllocator.c++ \
-    allocator-tests/bks874-TestAllocator.out
 
 ifeq ($(shell uname), Darwin)                                           # Apple
     CXX          := g++
